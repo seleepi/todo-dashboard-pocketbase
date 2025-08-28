@@ -17,14 +17,22 @@ RUN wget https://github.com/pocketbase/pocketbase/releases/download/v0.22.21/poc
     && rm pocketbase_0.22.21_linux_amd64.zip \
     && chmod +x pocketbase
 
-# Copy migrations only (let PocketBase create fresh database)
+# Copy migrations and initial database data
 COPY pocketbase/pb_migrations ./pb_migrations/
+COPY pocketbase/pb_data ./pb_data_template/
 
-# Create empty pb_data directory
-RUN mkdir -p pb_data
+# Create persistent data directory and initialization script
+RUN mkdir -p /data && \
+    echo '#!/bin/sh' > init.sh && \
+    echo 'if [ ! -f /data/data.db ]; then' >> init.sh && \
+    echo '  echo "Initializing database with template data..."' >> init.sh && \
+    echo '  cp -r ./pb_data_template/* /data/ 2>/dev/null || true' >> init.sh && \
+    echo 'fi' >> init.sh && \
+    echo 'exec ./pocketbase serve --http=0.0.0.0:8080 --dir=/data' >> init.sh && \
+    chmod +x init.sh
 
 # Expose port
 EXPOSE 8080
 
-# Start PocketBase with hardcoded port (Railway will handle routing)
-CMD ["./pocketbase", "serve", "--http=0.0.0.0:8080"]
+# Use initialization script to handle persistent data
+CMD ["./init.sh"]
