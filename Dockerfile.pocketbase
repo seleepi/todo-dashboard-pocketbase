@@ -26,5 +26,5 @@ RUN mkdir -p pb_data
 # Expose port
 EXPOSE 8080
 
-# Start PocketBase with verbose logging
-CMD ./pocketbase serve --http=0.0.0.0:${PORT:-8080} --dev
+# Start PocketBase with shell expansion for PORT variable
+CMD ["/bin/sh", "-c", "./pocketbase serve --http=0.0.0.0:${PORT:-8080} --dev"]
