@@ -26,15 +26,5 @@ RUN mkdir -p pb_data
 # Expose port
 EXPOSE 8080
 
-# Create debug startup script
-RUN echo '#!/bin/sh' > start.sh && \
-    echo 'echo "=== Environment Debug ==="' >> start.sh && \
-    echo 'env | grep -i port || echo "No PORT variables found"' >> start.sh && \
-    echo 'echo "Available environment variables:"' >> start.sh && \
-    echo 'env | head -20' >> start.sh && \
-    echo '=== Starting PocketBase ===' >> start.sh && \
-    echo 'exec ./pocketbase serve --http=0.0.0.0:8080 --dev' >> start.sh && \
-    chmod +x start.sh
-
-# Start with debug script using hardcoded port
-CMD ["./start.sh"]
+# Start PocketBase with hardcoded port (Railway will handle routing)
+CMD ["./pocketbase", "serve", "--http=0.0.0.0:8080"]
