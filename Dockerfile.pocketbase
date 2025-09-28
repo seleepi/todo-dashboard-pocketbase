@@ -18,9 +18,8 @@ RUN cd /tmp && \
 # Create migrations directory
 RUN mkdir -p /pb/pb_migrations
 
-# Create data directory and declare as volume
+# Create data directory (Railway handles volumes separately)
 RUN mkdir -p /pb/pb_data
-VOLUME ["/pb/pb_data"]
 
 # Expose port
 EXPOSE 8080
