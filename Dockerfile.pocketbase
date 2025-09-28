@@ -1,38 +1,29 @@
-# Dockerfile for PocketBase deployment on Railway
 FROM alpine:latest
 
-# Install dependencies
-RUN apk add --no-cache \
-    ca-certificates \
-    unzip \
-    wget \
-    curl
+# Install ca-certificates for HTTPS
+RUN apk --no-cache add ca-certificates
 
 # Create app directory
-WORKDIR /app
+WORKDIR /pb
 
-# Download PocketBase directly (ensure we get the right architecture)
-RUN wget https://github.com/pocketbase/pocketbase/releases/download/v0.22.21/pocketbase_0.22.21_linux_amd64.zip \
-    && unzip pocketbase_0.22.21_linux_amd64.zip \
-    && rm pocketbase_0.22.21_linux_amd64.zip \
-    && chmod +x pocketbase
+# Download PocketBase
+ADD https://github.com/pocketbase/pocketbase/releases/download/v0.22.21/pocketbase_0.22.21_linux_amd64.zip /tmp/pocketbase.zip
 
-# Copy migrations and initial database data
-COPY pocketbase/pb_migrations ./pb_migrations/
-COPY pocketbase/pb_data ./pb_data_template/
+# Extract PocketBase
+RUN cd /tmp && \
+    unzip pocketbase.zip && \
+    chmod +x pocketbase && \
+    mv pocketbase /pb/
 
-# Create persistent data directory and initialization script
-RUN mkdir -p /data && \
-    echo '#!/bin/sh' > init.sh && \
-    echo 'if [ ! -f /data/data.db ]; then' >> init.sh && \
-    echo '  echo "Initializing database with template data..."' >> init.sh && \
-    echo '  cp -r ./pb_data_template/* /data/ 2>/dev/null || true' >> init.sh && \
-    echo 'fi' >> init.sh && \
-    echo 'exec ./pocketbase serve --http=0.0.0.0:8080 --dir=/data' >> init.sh && \
-    chmod +x init.sh
+# Create migrations directory
+RUN mkdir -p /pb/pb_migrations
+
+# Create data directory and declare as volume
+RUN mkdir -p /pb/pb_data
+VOLUME ["/pb/pb_data"]
 
 # Expose port
 EXPOSE 8080
 
-# Use initialization script to handle persistent data
-CMD ["./init.sh"]
+# Run PocketBase
+CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8080"]
